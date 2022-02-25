@@ -48,11 +48,25 @@ class MethodChannelLocation extends LocationPlatform {
   }) async {
     final int result = await _methodChannel.invokeMethod(
       'changeSettings',
-      <String, dynamic>{
-        'accuracy': accuracy.index,
-        'interval': interval,
-        'distanceFilter': distanceFilter
-      },
+      <String, dynamic>{'accuracy': accuracy.index, 'interval': interval, 'distanceFilter': distanceFilter},
+    );
+
+    return result == 1;
+  }
+
+  /// Checks if service is enabled in the background mode.
+  @override
+  Future<bool> isBackgroundModeEnabled() async {
+    final int result = await _methodChannel.invokeMethod('isBackgroundModeEnabled');
+    return result == 1;
+  }
+
+  /// Enables or disables service in the background mode.
+  @override
+  Future<bool> enableBackgroundMode({bool enable}) async {
+    final int result = await _methodChannel.invokeMethod(
+      'enableBackgroundMode',
+      <String, dynamic>{'enable': enable},
     );
 
     return result == 1;
@@ -64,53 +78,37 @@ class MethodChannelLocation extends LocationPlatform {
   /// Returns a [LocationData] object.
   @override
   Future<LocationData> getLocation() async {
-    final Map<String, double> resultMap =
-        await _methodChannel.invokeMapMethod('getLocation');
+    final Map<String, double> resultMap = await _methodChannel.invokeMapMethod('getLocation');
     return LocationData.fromMap(resultMap);
   }
 
-  /// Checks if the app has permission to access location.
-  ///
-  /// If the result is [PermissionStatus.deniedForever], no dialog will be
-  /// shown on [requestPermission].
-  /// Returns a [PermissionStatus] object.
   @override
   Future<PermissionStatus> hasPermission() async {
     final int result = await _methodChannel.invokeMethod('hasPermission');
-    switch (result) {
-      case 0:
-        return PermissionStatus.denied;
-        break;
-      case 1:
-        return PermissionStatus.granted;
-        break;
-      case 2:
-        return PermissionStatus.deniedForever;
-      default:
-        throw PlatformException(code: 'UNKNOWN_NATIVE_MESSAGE');
-    }
+    return _parsePermissionStatus(result);
   }
 
-  /// Checks if the app has permission to access location.
-  ///
-  /// If the result is [PermissionStatus.deniedForever], no dialog will be
-  /// shown on [requestPermission].
-  /// Returns a [PermissionStatus] object.
   @override
   Future<PermissionStatus> requestPermission() async {
     final int result = await _methodChannel.invokeMethod('requestPermission');
+    return _parsePermissionStatus(result);
+  }
 
+  PermissionStatus _parsePermissionStatus(int result) {
     switch (result) {
       case 0:
         return PermissionStatus.denied;
-        break;
       case 1:
         return PermissionStatus.granted;
-        break;
       case 2:
         return PermissionStatus.deniedForever;
+      case 3:
+        return PermissionStatus.grantedLimited;
       default:
-        throw PlatformException(code: 'UNKNOWN_NATIVE_MESSAGE');
+        throw PlatformException(
+          code: 'UNKNOWN_NATIVE_MESSAGE',
+          message: 'Could not decode parsePermissionStatus with $result',
+        );
     }
   }
 
@@ -136,7 +134,6 @@ class MethodChannelLocation extends LocationPlatform {
   Stream<LocationData> get onLocationChanged {
     return _onLocationChanged ??= _eventChannel
         .receiveBroadcastStream()
-        .map<LocationData>((dynamic element) =>
-            LocationData.fromMap(Map<String, double>.from(element)));
+        .map<LocationData>((dynamic element) => LocationData.fromMap(Map<String, double>.from(element)));
   }
 }

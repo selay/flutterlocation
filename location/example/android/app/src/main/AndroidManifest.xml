@@ -2,7 +2,9 @@
     package="com.lyokone.locationexample">
 
     <uses-permission android:name="android.permission.INTERNET"/>
-
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:label="Location Example"
@@ -17,13 +19,6 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".EmbedderV1Activity"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
         </activity>
 
         <!-- Don't delete the meta-data below.

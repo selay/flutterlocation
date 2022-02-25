@@ -7,7 +7,9 @@ This plugin for [Flutter](https://flutter.io)
 handles getting location on Android and iOS. It also provides callbacks when location is changed.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Lyokone/flutterlocation/master/location/src/demo_readme.gif" alt="Demo App" style="margin:auto" width="372" height="686">
+  <a href="http://www.youtube.com/watch?feature=player_embedded&v=65qbtJMltVk" target="_blank">
+    <img src="http://img.youtube.com/vi/65qbtJMltVk/0.jpg" alt="Youtube Video" width=480" height="360" border="10" />
+  </a>
 </p>
 
 ## Getting Started
@@ -16,13 +18,20 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  location: ^3.0.0
+  location: ^3.2.1
 ```
 
 ### Android
 
 With Flutter 1.12, all the dependencies are automatically added to your project.
 If your project was created before Flutter 1.12, you may need to follow [this](https://github.com/flutter/flutter/wiki/Upgrading-pre-1.12-Android-projects).
+
+To use location background mode on Android you have to use the `enableBackgroundMode({bool enable})` API before trying to access location in the background and add nescessary permissions. You should place the required permissions in your applications `<your-app>/android/app/src/main/AndroidManifest.xml`:
+```xml
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+```
+Remember that the user has to accept the location permission to `always allow` to use background location. From Android 11 option to `always allow` is not presented on the location permission dialog prompt. The user has to enable it manually from the app settings and this should be explained to the user on a separate UI that redirects user to app's location settings managed by the operating system. More on that topic can be found on [Android developer](https://developer.android.com/training/location/permissions#request-background-location) pages.
 
 ### iOS
 
@@ -31,6 +40,18 @@ And to use it in iOS, you have to add this permission in Info.plist :
 ```xml
 NSLocationWhenInUseUsageDescription
 NSLocationAlwaysUsageDescription
+```
+
+To receive location when application is in background, to Info.plist you have to add property list key :
+
+```xml
+UIBackgroundModes
+```
+
+with string value:
+
+```xml
+location
 ```
 
 ### Web
@@ -79,9 +100,9 @@ if (!_serviceEnabled) {
 }
 
 _permissionGranted = await location.hasPermission();
-if (_permissionGranted == PermissionStatus.DENIED) {
+if (_permissionGranted == PermissionStatus.denied) {
   _permissionGranted = await location.requestPermission();
-  if (_permissionGranted != PermissionStatus.GRANTED) {
+  if (_permissionGranted != PermissionStatus.granted) {
     return;
   }
 }
@@ -92,12 +113,27 @@ _locationData = await location.getLocation();
 You can also get continuous callbacks when your position is changing:
 
 ```dart
-location.onLocationChanged().listen((LocationData currentLocation) {
+location.onLocationChanged.listen((LocationData currentLocation) {
   // Use current location
 });
 ```
 
+To receive location when application is in background you have to enable it:
+
+```dart
+location.enableBackgroundMode(enable: true)
+```
+
 Be sure to check the example project to get other code samples.
+
+On Android a foreground notification is displayed with information that location service is running in the background.
+
+On iOS while app is in the background and gets location, blue system bar notifies User about updates. Tapping on this bar moves User back to the app.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Lyokone/flutterlocation/master/location/src/background_location_android.png" alt="Androig background location"  width="343" height="686">
+  <img src="https://raw.githubusercontent.com/Lyokone/flutterlocation/master/location/src/background_location_ios.png" alt="iOS background location"  width="386" height="686">
+</p>
 
 ## Public Methods Summary
 
@@ -110,6 +146,7 @@ Be sure to check the example project to get other code samples.
 | Future\<bool>             | **changeSettings(LocationAccuracy accuracy = LocationAccuracy.HIGH, int interval = 1000, double distanceFilter = 0)** <br>Will change the settings of futur requests. `accuracy`will describe the accuracy of the request (see the LocationAccuracy object). `interval` will set the desired interval for active location updates, in milliseconds (only affects Android). `distanceFilter` set the minimum displacement between location updates in meters. |
 | Future\<LocationData>     | **getLocation()** <br>Allow to get a one time position of the user. It will try to request permission if not granted yet and will throw a `PERMISSION_DENIED` error code if permission still not granted.                                                                                                                                                                                                                                                    |
 | Stream\<LocationData>     | **onLocationChanged** <br>Get the stream of the user's location. It will try to request permission if not granted yet and will throw a `PERMISSION_DENIED` error code if permission still not granted.                                                                                                                                                                                                                                                       |
+| Future\<bool>             | **enableBackgroundMode({bool enable})** <br>Allow or disallow to retrieve location events in the background. Return a boolean to know if background mode was successfully enabled.                                                                                                                                                                                                                                                                           |
 
 You should try to manage permission manually with `requestPermission()` to avoid error, but plugin will try handle some cases for you.
 

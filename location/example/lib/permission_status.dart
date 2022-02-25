@@ -28,9 +28,6 @@ class _PermissionStatusState extends State<PermissionStatusWidget> {
       setState(() {
         _permissionGranted = permissionRequestedResult;
       });
-      if (permissionRequestedResult != PermissionStatus.granted) {
-        return;
-      }
     }
   }
 
@@ -41,7 +38,7 @@ class _PermissionStatusState extends State<PermissionStatusWidget> {
       children: <Widget>[
         Text(
           'Permission status: ${_permissionGranted ?? "unknown"}',
-          style: Theme.of(context).textTheme.body2,
+          style: Theme.of(context).textTheme.bodyText1,
         ),
         Row(
           children: <Widget>[

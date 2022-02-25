@@ -43,6 +43,16 @@ class LocationPlatform extends PlatformInterface {
     throw UnimplementedError();
   }
 
+  /// Checks if service is enabled in the background mode.
+  Future<bool> isBackgroundModeEnabled() {
+    throw UnimplementedError();
+  }
+
+  /// Enables or disables service in the background mode.
+  Future<bool> enableBackgroundMode({bool enable}) {
+    throw UnimplementedError();
+  }
+
   /// Gets the current location of the user.
   ///
   /// Throws an error if the app has no permission to access location.
@@ -60,7 +70,7 @@ class LocationPlatform extends PlatformInterface {
     throw UnimplementedError();
   }
 
-  /// Checks if the app has permission to access location.
+  /// Requests permission to access location.
   ///
   /// If the result is [PermissionStatus.deniedForever], no dialog will be
   /// shown on [requestPermission].

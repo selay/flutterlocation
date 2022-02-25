@@ -1,7 +1,6 @@
 package com.lyokone.location;
 
 import android.os.Build;
-import android.os.Bundle;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -13,23 +12,24 @@ import io.flutter.plugin.common.MethodChannel.Result;
 final class MethodCallHandlerImpl implements MethodCallHandler {
     private static final String TAG = "MethodCallHandlerImpl";
 
-    private final FlutterLocation location;
+    private FlutterLocation location;
+    private FlutterLocationService locationService;
+
     @Nullable
     private MethodChannel channel;
 
     private static final String METHOD_CHANNEL_NAME = "lyokone/location";
 
-    MethodCallHandlerImpl(FlutterLocation location) {
+    void setLocation(FlutterLocation location) {
         this.location = location;
+    }
+
+    void setLocationService(FlutterLocationService locationService) {
+        this.locationService = locationService;
     }
 
     @Override
     public void onMethodCall(MethodCall call, Result result) {
-        if (location.activity == null) {
-            result.error("NO_ACTIVITY", null, null);
-            return;
-        }
-
         switch (call.method) {
             case "changeSettings":
                 onChangeSettings(call, result);
@@ -44,10 +44,16 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
                 onRequestPermission(result);
                 break;
             case "serviceEnabled":
-                location.checkServiceEnabled(result);
+                onServiceEnabled(result);
                 break;
             case "requestService":
                 location.requestService(result);
+                break;
+            case "isBackgroundModeEnabled":
+                isBackgroundModeEnabled(result);
+                break;
+            case "enableBackgroundMode":
+                enableBackgroundMode(call, result);
                 break;
             default:
                 result.notImplemented();
@@ -84,7 +90,7 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
 
     private void onChangeSettings(MethodCall call, Result result) {
         try {
-            final Integer locationAccuracy = location.mapFlutterAccuracy.get(call.argument("accuracy"));
+            final Integer locationAccuracy = location.mapFlutterAccuracy.get((Integer) call.argument("accuracy"));
             final Long updateIntervalMilliseconds = new Long((int) call.argument("interval"));
             final Long fastestUpdateIntervalMilliseconds = updateIntervalMilliseconds / 2;
             final Float distanceFilter = new Float((double) call.argument("distanceFilter"));
@@ -121,6 +127,14 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
         }
     }
 
+    private void onServiceEnabled(Result result) {
+        try {
+            result.success(location.checkServiceEnabled() ? 1 : 0);
+        } catch (Exception e) {
+            result.error("SERVICE_STATUS_ERROR", "Location service status couldn't be determined", null);
+        }
+    }
+
     private void onRequestPermission(Result result) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             result.success(1);
@@ -131,4 +145,39 @@ final class MethodCallHandlerImpl implements MethodCallHandler {
         location.requestPermissions();
     }
 
+    private void isBackgroundModeEnabled(Result result) {
+        if (locationService != null) {
+            result.success(this.locationService.isInForegroundMode() ? 1 : 0);
+        } else {
+            result.success(0);
+        }
+    }
+
+    private void enableBackgroundMode(MethodCall call, Result result) {
+        final Boolean enable = call.argument("enable");
+        if (locationService != null && enable != null) {
+            if (locationService.checkBackgroundPermissions()) {
+                if (enable) {
+                    locationService.enableBackgroundMode();
+
+                    result.success(1);
+                } else {
+                    locationService.disableBackgroundMode();
+
+                    result.success(0);
+                }
+            } else {
+                if (enable) {
+                    locationService.setResult(result);
+                    locationService.requestBackgroundPermissions();
+                } else {
+                    locationService.disableBackgroundMode();
+
+                    result.success(0);
+                }
+            }
+        } else {
+            result.success(0);
+        }
+    }
 }
